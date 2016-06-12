@@ -1,0 +1,7 @@
+# Automatically saved, intermediate files
+*.swp
+
+
+# Binaries, installations
+/node_modules/
+/contracts_abi/
