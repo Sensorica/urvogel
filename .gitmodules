@@ -1,6 +1,0 @@
-[submodule "externals/drone_employee_ros"]
-	path = externals/drone_employee_ros
-	url = https://github.com/DroneEmployee/drone_employee_ros.git
-[submodule "externals/node-nfc"]
-	path = externals/node-nfc
-	url = https://github.com/camme/node-nfc.git

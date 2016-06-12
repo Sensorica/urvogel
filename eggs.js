@@ -1,17 +1,21 @@
+//
+// Urvogel - the eggs on the blockchain
+//
 
 var fs = require ('fs');
 var prompt = require('prompt');
 var erisC = require('eris-contracts');
 
-var nfc  = require('./externals/node-nfc/index').nfc
+var nfc  = require('nfc').nfc
   , util = require('util')
   , version = nfc.version()
   , devices = nfc.scan()
   ;
 
-console.log('version: ' + util.inspect(version, { depth: null }));
-console.log('devices: ' + util.inspect(devices, { depth: null }));
+//console.log('version: ' + util.inspect(version, { depth: null }));
+//console.log('devices: ' + util.inspect(devices, { depth: null }));
 
+/********************************* Contracts **********************************/
 var erisdbURL = "http://localhost:1337/rpc";
 
 // get the abi and deployed data squared away
@@ -58,16 +62,19 @@ function setValue(value) {
   });
 }
 
+//
+// Read and process the RFID value
+//
 function read(deviceID) {
-  console.log('');
   var nfcdev = new nfc.NFC();
 
+  // RFID data ready to read
   nfcdev.on('read', function(tag) {
     console.log(util.inspect(tag, { depth: null }));
     if ((!!tag.data) && (!!tag.offset)) {
-      console.log(util.inspect(nfc.parse(tag.data.slice(tag.offset)), { depth: null }));
-      console.log("Got eggs...") 
-      
+      data = tag.data.slice(18);
+      console.log("Got eggs...") ;
+      // Update contract  
       eggsContract.get(function(error, result){
         if (error) { throw error }
         curEggs = result.toNumber();
@@ -79,23 +86,28 @@ function read(deviceID) {
       nfcdev.stop();
 
     } else {
-      console.log("No data")
+      console.log("Hold tag longer on the RFID reader.")
     }
 
   });
-
+  
+  // RFID/NFC error callback.
   nfcdev.on('error', function(err) {
     console.log(util.inspect(err, { depth: null }));
   });
 
+  // RFID/NFC stopped, clean up.
   nfcdev.on('stopped', function() {
-    console.log('stopped');
+    //console.log('stopped');
   });
 
-  console.log(nfcdev.start(deviceID));
+  nfcdev.start(deviceID)
+  console.log("Waiting for eggs...");
 }
 
-//for (var deviceID in devices) read(deviceID);
+//
+// Program entry 
+//
 for (var deviceID in devices) {
   read(deviceID);
 }
