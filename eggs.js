@@ -2,59 +2,48 @@
 // Urvogel - the eggs on the blockchain
 //
 
-var fs = require ('fs');
-var prompt = require('prompt');
-var erisC = require('eris-contracts');
-
-var nfc  = require('nfc').nfc
+// Node js native libs
+var fs = require ('fs')
   , util = require('util')
-  , version = nfc.version()
-  , devices = nfc.scan()
   ;
 
-//console.log('version: ' + util.inspect(version, { depth: null }));
-//console.log('devices: ' + util.inspect(devices, { depth: null }));
+// Open source libs
+var erisC = require('eris-contracts')
+  , ndef = require('ndef')
+  , nfc  = require('nfc').nfc
+  , devices = nfc.scan()
+  ;
 
 /********************************* Contracts **********************************/
 var erisdbURL = "http://localhost:1337/rpc";
 
 // get the abi and deployed data squared away
-var contractData = require('./contracts_abi/epm.json');
+var contractData = require('./contracts/epm.json');
 var eggsContractAddress = contractData["deployStorageK"];
-var eggsAbi = JSON.parse(fs.readFileSync("./contracts_abi/abi/" + eggsContractAddress));
+var eggsAbi = JSON.parse(fs.readFileSync("./contracts/abi/" + eggsContractAddress));
 
 // properly instantiate the contract objects manager using the erisdb URL
 // and the account data (which is a temporary hack)
-var accountData = require('./contracts_abi/accounts.json');
+var accountData = require('./contracts/accounts.json');
 var contractsManager = erisC.newContractManagerDev(erisdbURL, accountData.eggchain_full_001);
 
 // properly instantiate the contract objects using the abi and address
 var eggsContract = contractsManager.newContractFactory(eggsAbi).at(eggsContractAddress);
 
-// display the current value of idi's contract by calling
-// the `get` function of idi's contract
+//
+// Get current outstanding number of eggs in contract
+// 
 function getValue(callback) {
   eggsContract.get(function(error, result){
     if (error) { throw error }
     console.log("Egg number now is:\t\t\t" + result.toNumber());
-    callback();
+    callback(result);
   });
 }
 
-// prompt the user to change the value of idi's contract
-function changeValue() {
-  prompt.message = "What number should Idi make it?";
-  prompt.delimiter = "\t";
-  prompt.start();
-  prompt.get(['value'], function (error, result) {
-    if (error) { throw error }
-    setValue(result.value)
-  });
-}
-
-// using eris-contracts call the `set` function of idi's
-// contract using the value which was recieved from the
-// changeValue prompt
+//
+// Set egg number in eggs contract
+//
 function setValue(value) {
   eggsContract.set(value, function(error, result){
     if (error) { throw error }
@@ -70,19 +59,36 @@ function read(deviceID) {
 
   // RFID data ready to read
   nfcdev.on('read', function(tag) {
-    console.log(util.inspect(tag, { depth: null }));
+    //console.log(util.inspect(tag, { depth: null }));
     if ((!!tag.data) && (!!tag.offset)) {
-      data = tag.data.slice(18);
-      console.log("Got eggs...") ;
-      // Update contract  
-      eggsContract.get(function(error, result){
-        if (error) { throw error }
-        curEggs = result.toNumber();
-        console.log("Current eggs number is:\t\t\t" + result.toNumber());
-        console.log("Adding a dozen eggs")
-        setValue(curEggs+12);
-      });
+      tlvs = nfc.parse(tag.data.slice(tag.offset))
+      //console.log(util.inspect(tlvs, { depth: null }))
+      if (!!tlvs && ('ndef' in tlvs[0])) {
+        attachedData = tlvs[0].ndef[0].value;
+        console.log("TAG: " + attachedData);
 
+        if (attachedData == "eggs") {
+          // Update contract  
+          getValue(function (result) {
+            curEggs = result.toNumber();
+            console.log("Adding a dozen eggs")
+            setValue(curEggs+12);
+          });
+          /*
+          eggsContract.get(function(error, result){
+            if (error) { throw error }
+            curEggs = result.toNumber();
+            console.log("Current eggs number is:\t\t\t" + result.toNumber());
+            console.log("Adding a dozen eggs")
+            setValue(curEggs+12);
+          });
+          */
+        } else {
+          console.log("Sorry, we don't accept " + attachedData);
+        }
+
+      }
+      
       nfcdev.stop();
 
     } else {
@@ -99,6 +105,7 @@ function read(deviceID) {
   // RFID/NFC stopped, clean up.
   nfcdev.on('stopped', function() {
     //console.log('stopped');
+    console.log('');
   });
 
   nfcdev.start(deviceID)

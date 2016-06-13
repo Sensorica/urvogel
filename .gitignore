@@ -4,4 +4,7 @@
 
 # Binaries, installations
 /node_modules/
-/contracts_abi/
+
+/contracts/abi/
+/contracts/epm.json
+/contracts/accounts.json
