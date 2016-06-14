@@ -237,7 +237,7 @@ contract eggtracker is Errors, linkedList {
 		return (NO_ERROR, EGGIDCOUNT);
 	}
 
-	function 
+//	function create() internal returns (uint error)
 
 	function transferEgg(uint eggid, address newOwner) returns (uint error) {
 
