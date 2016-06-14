@@ -45,7 +45,7 @@ contract tracker is Errors, linkedList {
 		mapping(uint => bool) perms;
 	}
 
-	mapping(uint => object) objects;
+	mapping(uint => egg) eggs;
 	mapping(address => user) users;
 
 	linkedlist userList;
@@ -69,6 +69,14 @@ contract tracker is Errors, linkedList {
 
 	function isAdmin(address user) constant returns (bool ret) {
 		return users[user].perms[PERM_ADMIN];
+	}
+
+	function canCreate(address user) constant returns (bool ret) {
+		return users[user].perms[PERM_CREATE];
+	}
+
+	function canTrade(address user) constant returns (bool ret) {
+		return users[user].perms[PERM_TRADE];
 	}
 
 	function createUser(address userAddress, string name , bool adminPerm, bool createPerm, bool tradePerm) returns (uint error) {
@@ -154,43 +162,7 @@ contract tracker is Errors, linkedList {
 	}
 
 
-	function addCreateEvent (history storage hist, address actor, bytes32 secretHash) internal returns (uint error) {
-
-		if (hist.length != 0) {
-			return (INVALID_STATE);
-		}
-
-		hist.length = hist.length + 1;
-		hist.currentSecretHash = secretHash;
-		hist.currentOwner = actor;
-
-		evt newEvent = hist.events[hist.length];
-
-		newEvent.type = EVENT_CREATE;
-		newEvent.actor = actor;
-		newEvent.time = block.timestamp;
-
-		return NO_ERROR;
-	}
-
-	function addTransferEvent (history storage hist, address actor, bytes32 secret) internal returns (uint error) {
-
-		if (!hist.claimed) {
-			return (INVALID_STATE);
-		}
-
-		hist.length = hist.length + 1;
-		hist.currentOwner = actor;
-
-		evt newEvent = hist.events[hist.length];
-
-		newEvent.type = EVENT_TRANSFER;
-		newEvent.actor = actor;
-		newEvent.time = block.timestamp;
-	}
-
-
-	function getEggData(uint objid) returns (address owner, bytes32 secretHash, bool claimed, uint originDate, string desc, uint historyLength){
+	function getEggData(uint eggid) returns (address owner, bytes32 secretHash, bool claimed, uint originDate, string desc, uint historyLength){
 		egg thisEgg = eggs[eggid];
 
 		owner = thisEgg.hist.currentOwner;
@@ -202,16 +174,33 @@ contract tracker is Errors, linkedList {
 		return;
 	}
 
-	function getHistoryEntry(uint objid, uint eventNum) returns (TODO){
+	function getHistoryEntry(uint eggid, uint eventNum) returns (uint type, address actor, uint time){
+		egg thisEgg = eggs[eggid];
 
+		evt thisEvent = thisEgg.hist.evts[eventNum];
+		type = thisEvent.type;
+		actor = thisEvent.actor;
+		time = thisEvent.time;
+		return;
+	}
+
+	function addEvent (history storage hist, uint type,  address actor) internal {
+
+		hist.length = hist.length + 1;
+
+		evt newEvent = hist.events[hist.length];
+
+		newEvent.type = type;
+		newEvent.actor = actor;
+		newEvent.time = block.timestamp;
+
+		return;
 	}
 
 	function createEgg(string desc, bytes32 secretHash) returns (uint error, uint newID) {
 		
-		user caller = users[msg.sender];
-
 		if (!canCreate(msg.sender)){
-			return ACCESS_DENIED;
+			return (ACCESS_DENIED, 0);
 		}
 
 		EGGIDCOUNT = EGGIDCOUNT + 1;
@@ -224,24 +213,68 @@ contract tracker is Errors, linkedList {
 
 		history hist = newEgg.hist;
 
-		hist.length = hist.length + 1;
-		hist.currentSecretHash = secretHash;
+		hist.secretHash = secretHash;
 		hist.currentOwner = msg.sender;
 
-		evt newEvent = hist.events[hist.length];
+		addEvent(hist, EVENT_CREATE, msg.sender)
 
-		newEvent.type = EVENT_CREATE;
-		newEvent.actor = msg.sender;
-		newEvent.time = block.timestamp;
+		return (NO_ERROR, EGGIDCOUNT);
+	}
+
+	function transferObject(uint eggid, address newOwner) returns (uint error) {
+
+		if (!canTrade(msg.sender)){
+			return ACCESS_DENIED;
+		}
+
+		egg thisEgg = eggs[eggid];
+
+		history hist = thisEgg.hist;
+
+		if (!hist.claimed){
+			return INVALID_STATE;
+		}
+
+		if (msg.sender != hist.currentOwner){
+			return ACCESS_DENIED;
+		}
+
+		hist.currentOwner = newOwner;
+
+		addEvent(hist, EVENT_TRANSFER, msg.sender);
 
 		return NO_ERROR;
 	}
 
-	function transferObject(uint objid, address newOwner) returns (uint error) {
+	function claimObject(uint eggid, bytes32 secret, bytes32 newSecretHash) returns (uint error) {
 
-	}
+		if (!canTrade(msg.sender)){
+			return ACCESS_DENIED;
+		}
 
-	function claimObject(uint objid, bytes32 secret, bytes32 newSecretHash) returns (uint error) {
+		egg thisEgg = eggs[eggid];
 
+		history hist = thisEgg.hist;
+
+		if (hist.claimed){
+			return INVALID_STATE;
+		}
+
+		if (msg.sender != hist.currentOwner){
+			return ACCESS_DENIED;
+		}
+
+
+		//Check if the hash of provided secret matches
+		if (sha256(secret) != hist.secretHash){
+			return PARAMETER_ERROR;
+		}
+
+		hist.currentOwner = msg.sender;
+		hist.secretHash = newSecretHash;
+
+		addEvent(hist, EVENT_CLAIM, msg.sender);
+
+		return NO_ERROR;
 	}
 }
