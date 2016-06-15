@@ -13,26 +13,27 @@ var eggsAbi = JSON.parse(fs.readFileSync("./abi/" + eggsContractAddress));
 // and the account data (which is a temporary hack)
 var accountData = require('./accounts.json');
 // note: fackaccount is needed to query the chain
-var contractsManager = erisC.newContractManagerDev(erisdbURL, accountData.eggchain_fakeaccount_000);
+var contractsManager = erisC.newContractManagerDev(erisdbURL, accountData.trackingchain_developer_001);
 
 // properly instantiate the contract objects using the abi and address
 var eggsContract = contractsManager.newContractFactory(eggsAbi).at(eggsContractAddress);
 
 // get egg history
 // requires cartonID passed in from URL
-function getEggHistory(cartonID) { //return something
+function getEggHistory(cartonID, callback) { //return something
 	eggsContract.getEggData(cartonID, function(error, result){
     	if (error) { throw error }
-    	console.log("Log of egg carton history" + result.toString());
+    		console.log("Log of egg carton history" + result.toString());
+		callback(result.toString())
+		var totalEvents = result.historyLength
+		for(var eventNumber = 0; eventNumber < totalEvents; i++) {
+			eventInformation(cartonID, eventNumber, function(error, result){
+			if (error) { throw error }
+			console.log("Where you eggs have been: %s")
+			});	
+	
+		}
   	});
-	var totalEvents = result.historyLength
-	for(var eventNumber = 0; eventNumber < totalEvents; i++) {
-		eventInformation(cartonID, eventNumber, function(error, result){
-		if (error) { throw error }
-		console.log("Where you eggs have been: %s")
-		});	
-
-	}
 }
 
 function eventInformation(cartonID, eventNumber) { // return something
@@ -55,8 +56,10 @@ server.listen(PORT, function(){
 });
 
 function handleRequest(request, response){
-	var cartonID = url.parse(request.url).pathname
+	var cartonID = request.url.substr(1);
 	console.log("Request for cartonID: " + cartonID + " received.");
-
+	getEggHistory(cartonID, function(id) {
+		console.log("what what %s", id);
+	});
 	response.end('Your eggs history is:' + cartonID)
 }
