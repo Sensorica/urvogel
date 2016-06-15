@@ -5,4 +5,4 @@ contracts = [
 [edb]
 host = "localhost"
 port = "1337"
-account = "tyler"
+account = "tyler-hide"

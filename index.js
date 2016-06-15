@@ -27,20 +27,20 @@ ec.init(account, function (err) {
     })
 
     console.log("START UP");
-    ec.cache.run('select * from eggs', function(err, row){
-        console.log("EGGs:")
-        console.log(row)
+    // ec.cache.run('select * from eggs', function(err, row){
+    //     console.log("EGGs:")
+    //     console.log(row)
 
-        ec.cache.run('select * from history', function(err, row){
-            console.log("History: ")
-            console.log(row)
-        })
+    //     ec.cache.run('select * from history', function(err, row){
+    //         console.log("History: ")
+    //         console.log(row)
+    //     })
 
-        ec.cache.run('select * from users', function(err, row){
-            console.log("Users:")
-            console.log(row)
-        })
+    //     ec.cache.run('select * from users', function(err, row){
+    //         console.log("Users:")
+    //         console.log(row)
+    //     })
 
-    });
+    // });
 });
 

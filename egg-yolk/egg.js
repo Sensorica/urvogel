@@ -29,9 +29,6 @@ Egg.prototype.init = function(account, cb){
 }
 
 
-
-
-
 Egg.prototype.getHistoryEntry = function(eggid, eventNum, cb){
 	if (!this.egg) return cb(new Error('Egg contract has not been initialized'));
 	this.egg.getHistoryEntry.sendTransaction(eggid, eventNum, function(err, result){
@@ -59,6 +56,8 @@ Egg.prototype.isAdmin = function(user, cb){
 Egg.prototype.createEgg = function(desc, secretHash, cb){
 	if (!this.egg) return cb(new Error('Egg contract has not been initialized'));
 	this.egg.createEgg.sendTransaction(desc, secretHash, function(err, result){
+		console.log("fkjldskl")
+		console.log(err)
 		if(err) return cb(err, null);
 		return cb(null, result.values.error, result.values.newID);
 	})
@@ -144,17 +143,18 @@ Egg.prototype.deploy = function(account, cb){
 	edb.deploy(account, "eggtracker", function(err){
 		if(err) return cb(err);
 		self.egg = edb.getContract("eggtracker", account);
-		return cb(null)
+		return cb(null, self.egg.address)
 	});
 }
 
 Egg.prototype.initialize_users = function(accounts, cb){
 	var self = this;
-	async.forEachOf(accounts, function(account, key, callback){
+	async.forEachOfLimit(accounts, 3, function(account, key, callback){
 //		console.log(account)
-		self.createUser(account.address, key, account.adminPerm, account.createPerm, account.tradePerm, function(err){
-			console.log("hello")
-			console.log(err)
+		self.createUser(account.address, key, account.adminPerm, account.createPerm, account.tradePerm, function(err, ecode){
+			// console.log("hello")
+			// console.log(err)
+			// console.log(ecode)
 			callback(err)
 		});
 	}, cb)

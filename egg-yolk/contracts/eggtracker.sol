@@ -71,13 +71,13 @@ contract eggtracker is Errors, linkedList, tracker{
 			return PARAMETER_ERROR;
 		}
 
+		user newuser = users[userAddress];
 		if(newuser.exists) {
 			return RESOURCE_ALREADY_EXISTS; 
 		}
 
 		USERCOUNT = USERCOUNT + 1;
 
-		user newuser = users[userAddress];
 		newuser.name = name;
 		newuser.uid = USERCOUNT;
 		newuser.addr = userAddress;

@@ -12,10 +12,10 @@ var account = accounts[accountName];
 
 console.log(account)
 
-eggc.deploy(account, function(err){
+eggc.deploy(account, function(err, contractAddress){
+	console.log(contractAddress)
 	if(err) throw err;
 	console.log("Deployed")
-	console.log(accounts)
 	eggc.initialize_users(accounts, function(err){
 		console.log("Contract initialized with users. Enjoy!")
 	})
