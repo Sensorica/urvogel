@@ -35,7 +35,7 @@ contract eggtracker is Errors, linkedList, tracker{
 	uint EGGIDCOUNT;
 	uint USERCOUNT;
 
-	function tracker() {
+	function eggtracker() {
 		EGGIDCOUNT = 0;
 		USERCOUNT = 1;
 
