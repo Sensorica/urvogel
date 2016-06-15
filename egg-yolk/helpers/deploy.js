@@ -10,8 +10,6 @@ var accountName = config.edb.account;
 var accounts = fs.readJSONSync("./accounts.json");
 var account = accounts[accountName];
 
-console.log(account)
-
 eggc.deploy(account, function(err, contractAddress){
 	console.log(contractAddress)
 	if(err) throw err;

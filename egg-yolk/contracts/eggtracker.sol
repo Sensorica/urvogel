@@ -15,6 +15,7 @@ contract eggtracker is Errors, linkedList, tracker{
 		uint originDate;
 		string desc;
 		uint rating;
+		bool exists;
 
 		history hist;
 	}
@@ -44,6 +45,8 @@ contract eggtracker is Errors, linkedList, tracker{
 		owner.uid = USERCOUNT;
 		owner.addr = msg.sender;
 		owner.perms[PERM_ADMIN] = true;
+		owner.perms[PERM_CREATE] = true;
+		owner.perms[PERM_TRADE] = true;
 		owner.exists = true;
 
 		pushlink(userList, 0, USERCOUNT, bytes32(msg.sender));
@@ -141,13 +144,13 @@ contract eggtracker is Errors, linkedList, tracker{
 		return NO_ERROR;
 	}
 
-	function getShit() returns (uint EGGLen, uint USERLen){
+	function getShit() constant returns (uint EGGLen, uint USERLen){
 		EGGLen = EGGIDCOUNT;
 		USERLen = userList.len-1;
 		return;
 	}
 
-	function getUser(uint uid) returns (string name, address addr, bool exists, bool adminPerm, bool createPerm, bool tradePerm) {
+	function getUser(uint uid) constant returns (string name, address addr, bool exists, bool adminPerm, bool createPerm, bool tradePerm) {
 		address userAddress = address(getlinkdataat(userList, int(uid)));
 		user thisUser = users[userAddress];
 		name = thisUser.name;
@@ -159,8 +162,19 @@ contract eggtracker is Errors, linkedList, tracker{
 		return;
 	}
 
+	function getUserByAddress(address userAddress) constant returns (string name, address addr, bool exists, bool adminPerm, bool createPerm, bool tradePerm) {
+		user thisUser = users[userAddress];
+		name = thisUser.name;
+		addr = thisUser.addr;
+		exists = thisUser.exists;
+		adminPerm = thisUser.perms[PERM_ADMIN];
+		createPerm = thisUser.perms[PERM_CREATE];
+		tradePerm = thisUser.perms[PERM_TRADE];
+		return;
+	}
 
-	function getEggData(uint eggid) returns (address owner, bytes32 secretHash, bool claimed, uint originDate, string desc, uint historyLength){
+
+	function getEggData(uint eggid) constant returns (address owner, bytes32 secretHash, bool claimed, uint originDate, string desc, uint historyLength, bool exists){
 		egg thisEgg = eggs[eggid];
 
 		owner = thisEgg.hist.currentOwner;
@@ -169,10 +183,11 @@ contract eggtracker is Errors, linkedList, tracker{
 		originDate = thisEgg.originDate;
 		desc = thisEgg.desc;
 		historyLength = thisEgg.hist.length;
+		exists = thisEgg.exists;
 		return;
 	}
 
-	function getHistoryEntry(uint eggid, uint eventNum) returns (uint etype, address actor, uint time){
+	function getHistoryEntry(uint eggid, uint eventNum) constant returns (uint etype, address actor, uint time){
 		egg thisEgg = eggs[eggid];
 
 		evt thisEvent = thisEgg.hist.events[eventNum];
@@ -183,7 +198,7 @@ contract eggtracker is Errors, linkedList, tracker{
 	}
 
 	function createEgg(string desc, bytes32 secretHash) returns (uint error, uint newID) {
-		
+
 		if (!canCreate(msg.sender)){
 			return (ACCESS_DENIED, 0);
 		}
@@ -201,6 +216,7 @@ contract eggtracker is Errors, linkedList, tracker{
 
 		newEgg.desc = desc;
 		newEgg.originDate = block.timestamp;
+		newEgg.exists = true;
 
 		return (NO_ERROR, EGGIDCOUNT);
 	}

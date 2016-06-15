@@ -2,7 +2,7 @@
   "eggtracker": {
     "abi": [
       {
-        "constant": false,
+        "constant": true,
         "inputs": [
           {
             "name": "eggid",
@@ -127,7 +127,7 @@
         "type": "function"
       },
       {
-        "constant": false,
+        "constant": true,
         "inputs": [],
         "name": "getShit",
         "outputs": [
@@ -143,7 +143,7 @@
         "type": "function"
       },
       {
-        "constant": false,
+        "constant": true,
         "inputs": [
           {
             "name": "eggid",
@@ -175,6 +175,10 @@
           {
             "name": "historyLength",
             "type": "uint256"
+          },
+          {
+            "name": "exists",
+            "type": "bool"
           }
         ],
         "type": "function"
@@ -221,6 +225,43 @@
           {
             "name": "error",
             "type": "uint256"
+          }
+        ],
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [
+          {
+            "name": "userAddress",
+            "type": "address"
+          }
+        ],
+        "name": "getUserByAddress",
+        "outputs": [
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "addr",
+            "type": "address"
+          },
+          {
+            "name": "exists",
+            "type": "bool"
+          },
+          {
+            "name": "adminPerm",
+            "type": "bool"
+          },
+          {
+            "name": "createPerm",
+            "type": "bool"
+          },
+          {
+            "name": "tradePerm",
+            "type": "bool"
           }
         ],
         "type": "function"
@@ -285,7 +326,7 @@
         "type": "function"
       },
       {
-        "constant": false,
+        "constant": true,
         "inputs": [
           {
             "name": "uid",
@@ -371,6 +412,6 @@
       }
     ],
     "isContract": true,
-    "address": "0546C1645A60AA173EF7BC10A022CFCCCA86FD28"
+    "address": "257C650B433FAF3DDDF246B2051DDDC7C28F7A6F"
   }
 }
