@@ -20,16 +20,22 @@ var eggsContract = contractsManager.newContractFactory(eggsAbi).at(eggsContractA
 
 // get egg history
 // requires cartonID passed in from URL
-function getHistory(cartonID) { //return something
+function getEggHistory(cartonID) { //return something
 	eggsContract.getEggData(cartonID, function(error, result){
     	if (error) { throw error }
     	console.log("Log of egg carton history" + result.toString());
   	});
-}
-// var placesCartonWent = getEggData.historyLength
-// loop through placesCartonWent
+	var totalEvents = result.historyLength
+	for(var eventNumber = 0; eventNumber < totalEvents; i++) {
+		eventInformation(cartonID, eventNumber, function(error, result){
+		if (error) { throw error }
+		console.log("Where you eggs have been: %s")
+		});	
 
-function locationInformation(cartonID, eventNumber) {
+	}
+}
+
+function eventInformation(cartonID, eventNumber) { // return something
   	eggsContract.getHistoryEntry(cartonID, eventNumber, function(error, result){
     	if (error) { throw error }
 	console.log("Place # %s, %s", eventNumber.toString(), result.toString());
@@ -50,7 +56,7 @@ server.listen(PORT, function(){
 
 function handleRequest(request, response){
 	var cartonID = url.parse(request.url).pathname
-	console.log("Request for cartonID" + cartonID + " received.");
+	console.log("Request for cartonID: " + cartonID + " received.");
 
-	response.end('Your eggs history is:')
+	response.end('Your eggs history is:' + cartonID)
 }
