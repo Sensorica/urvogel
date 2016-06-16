@@ -1,0 +1,8 @@
+contracts = [
+	"eggtracker",
+]
+
+[edb]
+host = "localhost"
+port = "1337"
+account = "tyler-hide"
