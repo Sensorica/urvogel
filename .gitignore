@@ -1,10 +1,11 @@
 # Automatically saved, intermediate files
 *.swp
+*.swo
 
 
 # Binaries, installations
-/node_modules/
+node_modules/
 
-/contracts/abi/
-/contracts/epm.json
-/contracts/accounts.json
+/contracts/eggs_rfid/abi/
+/contracts/eggs_rfid/epm.json
+/contracts/eggs_rfid/accounts.json

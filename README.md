@@ -23,6 +23,16 @@ sudo node eggs.js
 
 And place the tag to the reader, you'll see the eggs number goes up.
 
+## To Contribute
+### Project construction
+- `apps`: This folder contains separate RFID node/js applications. 
+  - `consumer`: The egg consumer (Ex. egg lover) side application.
+  - `producer`: The egg producer (Ex. farmer) side application.
+  - `egg_rfid`: Test apps for egg chain and rfid read and write.
+- `contracts`: This folder contains all the contracts for the apps. And each 
+   subfolder includes the contract compilation output such as `abi` and `epm.json`.
+   Also you can put the `accounts.json` here to feed your apps.
+
 ## Known Problems
 0. The `node-nfc` node dependency has issue with the `nfc.parse` function. 
 

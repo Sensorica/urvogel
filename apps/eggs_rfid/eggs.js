@@ -15,17 +15,20 @@ var erisC = require('eris-contracts')
   ;
 
 /********************************* Contracts **********************************/
+var appName = "eggs_rfid";
+var chainName = "testchain";
+
 var erisdbURL = "http://localhost:1337/rpc";
 
 // get the abi and deployed data squared away
-var contractData = require('./contracts/epm.json');
+var contractData = require("../../contracts/" + appName + '/epm.json');
 var eggsContractAddress = contractData["deployStorageK"];
-var eggsAbi = JSON.parse(fs.readFileSync("./contracts/abi/" + eggsContractAddress));
+var eggsAbi = JSON.parse(fs.readFileSync("../../contracts/" + appName + "/abi/" + eggsContractAddress));
 
 // properly instantiate the contract objects manager using the erisdb URL
 // and the account data (which is a temporary hack)
-var accountData = require('./contracts/accounts.json');
-var contractsManager = erisC.newContractManagerDev(erisdbURL, accountData.eggchain_full_001);
+var accountData = require("../../contracts/" + appName + "/accounts.json");
+var contractsManager = erisC.newContractManagerDev(erisdbURL, accountData.testchain_full_000);
 
 // properly instantiate the contract objects using the abi and address
 var eggsContract = contractsManager.newContractFactory(eggsAbi).at(eggsContractAddress);
@@ -68,23 +71,20 @@ function read(deviceID) {
         console.log("TAG: " + attachedData);
 
         if (attachedData == "eggs") {
+          // Write tag
+          //nfcdev.write("apple");
           // Update contract  
+          //*
           getValue(function (result) {
             curEggs = result.toNumber();
             console.log("Adding a dozen eggs")
             setValue(curEggs+12);
           });
-          /*
-          eggsContract.get(function(error, result){
-            if (error) { throw error }
-            curEggs = result.toNumber();
-            console.log("Current eggs number is:\t\t\t" + result.toNumber());
-            console.log("Adding a dozen eggs")
-            setValue(curEggs+12);
-          });
-          */
+          //*/ 
+         
         } else {
           console.log("Sorry, we don't accept " + attachedData);
+          //nfcdev.write("eggs");
         }
 
       }
