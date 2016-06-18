@@ -16,16 +16,19 @@ Inputs:
  -> Callback 	- function 	- callback function
 */
 Egg.prototype.init = function(account, cb){
+	console.log("init")
 	var self = this;
 	this.account = account;
 	this.cache = new sqlcache(':memory:', account);
 	this.egg = edb.getContract("eggtracker", account)
 	
-	// this.cache.addContract(self.egg, self.cacheStruct, "eggtracker", function(err){
-	// 	if(err) return cb(err);
-	// 	self.cache.initTables("eggtracker", cb);
-	// });
-	return cb(null);
+	this.cache.addContract(self.egg, self.cacheStruct, "eggtracker", function(err){
+		console.log("add contract")
+		if(err) return cb(err);
+//		self.cache.initTables("eggtracker", cb);
+		return cb(null);
+	});
+//	return cb(null);
 }
 
 

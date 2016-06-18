@@ -34,7 +34,6 @@ sqlcache.prototype.initTables = function(contractName, cb){
 	var self = this;
 
 
-
 	if(!this.contracts[contractName]){
 		return cb(new Error("A contract by " + contractName + " was not found"));
 	}
@@ -113,11 +112,7 @@ sqlcache.prototype.initTables = function(contractName, cb){
 			//Now InitSeq is ready to run all the table fillings
 			//loop through the tables then loop and loop calls to the update function.
 			async.forEachOf(tables, function(table, tabName, callback){
-				// console.log(tabName)
-				// if(tabName != "horse"){
-				// 	console.log("Skipping")
-				// 	return callback(null)
-				// }
+
 				var key1 = table.keys[0];
 				var key2 = "";
 				var tks = false;
@@ -157,7 +152,50 @@ sqlcache.prototype.initTables = function(contractName, cb){
 }
 
 
+function processOutput(output){
+	var Pop = {};
+	Pop.name = output.name;
+
+	switch(true){
+		case /bytes/i.test(output.type):
+			Pop.type = "VARCHAR(100)";
+			Pop.isString = true;
+			break;
+		case /int/i.test(output.type):
+			Pop.type = "INT";
+			Pop.isString = false;
+			break;
+		case /address/i.test(output.type):
+			Pop.type = "VARCHAR(100)";
+			Pop.isString = true;
+			break;
+		case /bool/i.test(output.type):
+			Pop.type = "BOOLEAN";
+			Pop.isString = false;
+			break;
+		case /string/i.test(output.type):
+			Pop.type = "TEXT";
+			Pop.isString = true;
+			break;
+		default:
+			throw new Error("Could not Identify return type: " + output.type);
+	}
+
+	return Pop;
+}
+
+function useOutput(output){
+	// This might be expanded over time
+	//Currently I only know that exists is a special name that can't be used
+	if (output.name == 'exists'){
+		return false;
+	}
+
+	return true;
+}
+
 function preprocess(contract, contractName, SD){
+
 	var NSD = {initSeq:{}, initCalls:{}, secCalls:{}, tables:{}};
 	var seenKeys = {};
 	//Step 1 Check the tables
@@ -168,47 +206,85 @@ function preprocess(contract, contractName, SD){
 	for (tabName in SD.tables){
 		var table = SD.tables[tabName];
 		//Mandatory structure
-		if (!table.call || !table.keys || !table.fields) throw new Error("The table definition \'" + tabName + "\' is missing one of \'keys\', \'call\', or \'fields\' and could not be processed");
+		if (!table.call || !table.keys) throw new Error("The table definition \'" + tabName + "\' is missing either \'keys\' or \'call\' and could not be processed");
 	
 		if (!contract[table.call]) throw new Error("The table \'" + tabName + "s\' call function \'" + table.call + "\' does not appear in the contract.");
 
 		if (table.keys.length != 1 && table.keys.length != 2) throw new Error("The keys array for \'" + tabName + "\' has either too many or too few members (Max is 2)");
 
-		//TODO check that the contract object's abi entry for this call has required fields
-
 		NSD.tables[tabName] = {};
 		NSD.tables[tabName].call = table.call;
 		NSD.tables[tabName].keys = table.keys;
-		NSD.tables[tabName].fields = table.fields;
+//		NSD.tables[tabName].fields = table.fields;
 		NSD.tables[tabName].name = tabName;
 
+		//Fill in this table's fields by reading the abi
+		var funcDefs = contract.abi.filter(function(obj){return (obj.type == 'function' && obj.name == table.call)})
+
+		if (funcDefs.length != 1) throw new Error("Function call is not unique: " + table.call);
+
+		var funcDef = funcDefs[0];
+
+		//Process Outputs
+		var tabfields = [];
+		for (var i = 0; i < funcDef.outputs.length; i++) {
+			var output = funcDef.outputs[i];
+
+			//Determine if we should make a column for this output
+			if(useOutput(output)){
+				tabfields.push(processOutput(output));
+			}
+
+		};
+
+		NSD.tables[tabName].fields = tabfields;
+
+		//Check that the inputs and keys match
+		//Keys must all have a mentod for obtaining their range (must appear in init seq)
 		for (var i = 0; i < table.keys.length; i++) {
 			seenKeys[table.keys[i]] = false;
+
+			var keyInInputs = false;
+			for (var j = 0; j < funcDef.inputs.length; j++) {
+				if(funcDef.inputs[j].name == table.keys[j]){
+					keyInInputs = true;
+					break;
+				}
+			};
+
+			if(!keyInInputs){
+				throw new Error("A key for the call is not a valid input: " + table.keys[i])
+			}
 		};
 	}
 
 	//Step 2 Check the initialization sequence
 
+	var indkeys = {}
+	var depkeys = []
 	//This processes which calls need to be made and what keys can be retrieved from them.
 	for (var key in SD.initSeq){
 		var ind = SD.initSeq[key];
-		//TODO add check that all necessary fields for index are present
 
 		var call = ind.call;
 
 		seenKeys[key] = true;
 
+		//Check that the call is valid
 		if (!contract[ind.call]) throw new Error("The index \'" + key + "s\' max fetch (call) function \'" + ind.call + "\' does not appear in the contract.");
 
-		//TODO Check that the call's have return data for the specified field.
+		//Check that the specified field is one of the outputs of the call.
+		var funcDefs = contract.abi.filter(function(obj){return (obj.name == ind.call);})
+		if (funcDefs.length != 1) throw new Error("Function call is not unique: " + ind.call);
 
-		//TODO check that dependencies are not circular
+		if (!funcDefs[0].outputs.some(function(output){return (output.name == ind.field)})) throw new Error("The initialization call " + ind.call + " does not have required field " + ind.field)
 
 		if(!ind.dependent){
 			if(!NSD.initCalls[call]){
 				NSD.initCalls[call] = [];
 			}
 
+			indkeys[key] = true;
 			NSD.initCalls[call].push(key);
 		} else {
 
@@ -219,12 +295,27 @@ function preprocess(contract, contractName, SD){
 
 			if(NSD.secCalls[call].dependent != ind.dependent) throw new Error("There are conflicting dependancies for the call \'" + call + "\' and key \'" + key);
 
+			depkeys.push(key);
 			NSD.secCalls[call].keyarray.push(key);
 		}
 	}
 
+	//Check for circular dependancies
+	for (var i = 0; i < depkeys.length; i++) {
+
+		if(!SD.initSeq[depkeys[i]].dependent){
+			throw new Error("The dependent key " + depkeys[i] + " has is not dependent on any provided independent keys. Needed: " + SD.initSeq[depkeys[i]].dependent)
+		}
+	};
+
+	//Check all keys have been seen
+	for (var key in seenKeys){
+		if(!seenKeys[key]) throw new Error("The key: " + key + " is required for initialization but initialization metod not provided for it");
+	}
+
 	return NSD;
 }
+
 
 sqlcache.prototype.addContract = function(contract, structDefRaw, contractName, cb){
 
@@ -275,7 +366,10 @@ sqlcache.prototype.addContract = function(contract, structDefRaw, contractName, 
 		 	cmd += ", " + field.name + " " + field.type 
 		}; 
 		cmd += ", " + pkeys + ")"
-		this.db.run(cmd);
+
+		this.db.run(cmd, function(err){
+			console.log(err)
+		});
 	}
 
 	var sub = function(err, subObj){
@@ -406,6 +500,10 @@ sqlcache.prototype.update = function(contractName, name, key1, key2, cb){
 			delflag = true;
 		}
 
+		console.log(upd)
+		console.log(ins)
+		console.log(del)
+
 		//Check if it exists
 		db.get("SELECT * from " + table.name + where, function(err, row){
 			if(row === undefined && !delflag){
@@ -459,14 +557,6 @@ sqlcache.prototype.remove = function(contractName, name, key1, key2, cb){
 
 	db.run(del);
 	return cb(null);
-}
-
-sqlcache.prototype.updateAll = function(contractName, name, primaries, callback){
-	console.log("TODO")
-}
-
-sqlcache.prototype.removeContract = function(contractName){
-	console.log("TODO")
 }
 
 sqlcache.prototype.get = function(contractName, name, key1, key2, callback){

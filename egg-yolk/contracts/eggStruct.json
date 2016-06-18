@@ -7,93 +7,17 @@
 	"tables":{
 		"eggs":{
 			"call": "getEggData",
-			"keys": ["eggid"],
-			"fields": [
-				{
-					"name":"owner",
-					"type":"VARCHAR(100)",
-					"isString":true
-				},
-				{
-					"name":"secretHash",
-					"type":"VARCHAR(100)",
-					"isString":true
-				},
-				{
-					"name":"claimed",
-					"type":"INT",
-					"isString":false
-				},
-				{
-					"name":"originDate",
-					"type":"INT",
-					"isString":false
-				},
-				{
-					"name":"exists",
-					"type":"INT",
-					"isString":false
-				},
-				{
-					"name":"adminPerm",
-					"type":"INT",
-					"isString":false
-				},
-				{
-					"name":"createPerm",
-					"type":"INT",
-					"isString":false
-				},
-				{
-					"name":"tradePerm",
-					"type":"INT",
-					"isString":false
-				}
-			]
+			"keys": ["eggid"]
 		},
 		"users":{
 			"call": "getUser",
-			"keys": ["uid"],
-			"fields":[
-				{
-					"name":"name",
-					"type":"VARCHAR(100)",
-					"isString":true
-				},
-				{
-					"name":"addr",
-					"type":"VARCHAR(100)",
-					"isString":true
-				},
-				{
-					"name":"role",
-					"type":"INT",
-					"isString":false
-				}
-			]
+			"keys": ["uid"]
 		},
 		"history":{
 			"call": "getHistoryEntry",
 			"keys": [
 				"eggid",
 				"eventid"
-			],
-			"fields":[
-				{
-					"name":"etype",
-					"type":"INT",
-					"isString":false
-				},
-				{
-					"name":"actor",
-					"type":"VARCHAR(100)",
-					"isString":true
-				},
-				{
-					"name":"time",
-					"type":"INT",
-					"isString":false
-				}
 			]
 		}
 	}

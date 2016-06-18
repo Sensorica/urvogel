@@ -17,6 +17,7 @@ var secretHash = hash.digest();
 
 
 ec.init(account, function (err) {
+    console.log("tables inited")
     if (err) {
         throw err;
     }
